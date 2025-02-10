@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form id="form-receta" data-receta-id="{{ receta.id }}">
+    <label for="nombre">Nombre de la receta:</label>
+    <input type="text" id="nombre" name="nombre" value="{{ receta.nombre }}" required>
+
+    <label for="tiempo_preparacion">Tiempo de preparación (minutos):</label>
+    <input type="number" id="tiempo_preparacion" name="tiempo_preparacion" value="{{ receta.tiempo_preparacion }}" required>
+
+    <label for="ingredientes">Ingredientes:</label>
+    <textarea id="ingredientes" name="ingredientes" rows="4" required>
+        {{ receta.ingredientes | map(attribute='nombre') | join(', ') }}
+    </textarea>
+
+    <button type="submit">Guardar cambios</button>
+</form>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("form-receta");
+    
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault(); // Evita la recarga de la página
+            
+            const recetaId = form.dataset.recetaId;  // Obtener el ID de la receta desde un atributo del formulario
+            const nombre = document.getElementById("nombre").value;
+            const tiempoPreparacion = parseInt(document.getElementById("tiempo_preparacion").value);
+            const ingredientes = document.getElementById("ingredientes").value
+                .split(",")
+                .map(item => item.trim()); // Convertir el texto en una lista
+    
+            const data = {
+                nombre: nombre,
+                tiempo_preparacion: tiempoPreparacion,
+                ingredientes: ingredientes
+            };
+    
+            try {
+                const response = await fetch(`/editar-eliminar-receta/${recetaId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+    
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert("Receta actualizada con éxito");
+                } else {
+                    alert("Error: " + result.detail);
+                }
+            } catch (error) {
+                console.error("Error en la solicitud:", error);
+                alert("Ocurrió un error al actualizar la receta.");
+            }
+        });
+    });
+    </script>
+    
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="container">
+    <div class="row">
+        <div class="col-md-4 offset-md-4">
+            <form class="card card-body" id="signup-form">
+                <h1 class="text-center">Sign up</h1>
+                <div class="mb-3">
+                    <label for="nombre">Username: </label>
+                    <input type="text" name="nombre" class="form-control" id="nombre"
+                        placeholder="Escriba su nombre de usuario">
+                </div>
+                <div class="mb-3">
+                    <label for="contraseña">Password: </label>
+                    <input type="password" name="contraseña" class="form-control" id="contraseña"
+                        placeholder="Escriba su contraseña">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Sign up
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("signup-form");
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const nombre = document.getElementById("nombre").value;
+            const contraseña = document.getElementById("contraseña").value;
+
+            const usuarioData = {
+                nombre: nombre,
+                contraseña: contraseña
+            };
+
+            try {
+                const response = await fetch("/signup/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",  // Indicamos que el contenido es JSON
+                    },
+                    body: JSON.stringify(usuarioData),  // Convertimos el objeto a JSON
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.detail}`);
+                } else {
+                    const newUser = await response.json();
+                    alert(`Usuario creado con éxito: ${newUser.nombre}`);
+                    window.location.href = "/";
+                }
+            } catch (error) {
+                console.error("Error al enviar la solicitud:", error);
+                alert("Hubo un error al procesar la solicitud.");
+            }
+        });
+    });
+</script>
+{% endblock %}

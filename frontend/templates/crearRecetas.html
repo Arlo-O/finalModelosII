@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="container">
+    <h1>Crear Nueva Receta</h1>
+    <form action="" id="formRecetas">
+        <div>
+            <label for="nombre">Nombre de la receta:</label>
+            <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div>
+            <label for="tiempoPreparacion">Tiempo de preparación (min):</label>
+            <input type="number" id="tiempoPreparacion" name="tiempoPreparacion" required>
+        </div>
+        <div>
+            <label for="nombre">Ingredientes:</label>
+            <ul id="listaIngredientes"></ul>
+            <input type="text" id="ingrediente" placeholder="Nombre del ingrediente">
+            <button type="button", id="agregarIngredienteBtn">Agregar ingrediente</button>
+        </div>
+        <button type="submit">Crear Receta</button>
+    </form>
+</main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("formRecetas");
+        const listaIngredientes = document.getElementById("listaIngredientes");
+        const inputIngrediente = document.getElementById("ingrediente");
+        const agregarIngredienteBtn = document.getElementById("agregarIngredienteBtn");
+
+        let ingredientes = [];
+
+        agregarIngredienteBtn.addEventListener("click", () => {
+            const ingredienteNombre = inputIngrediente.value.trim();
+            if(ingredienteNombre) {
+                ingredientes.push({nombre: ingredienteNombre});
+
+                const li = document.createElement("li");
+                li.textContent = ingredienteNombre;
+                listaIngredientes.appendChild(li);
+
+                inputIngrediente.value = "";
+            }
+        });
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const receta = {
+                nombre: document.getElementById("nombre").value,
+                tiempo_preparacion : parseInt(document.getElementById("tiempoPreparacion").value),
+                ingredientes : ingredientes
+            };
+
+            try {
+                const response = await fetch("/crearReceta/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(receta)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.detail}`);
+                } else {
+                    alert("Receta creada exitosamente");
+                    window.location.href = "/recetas/";
+                }
+            } catch (error) {
+                console.error("Error al enviar la receta:", error);
+                alert("Hubo un error al crear la receta.");
+            }
+        })
+    })
+</script>
+{% endblock %}

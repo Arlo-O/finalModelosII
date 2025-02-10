@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="container">
+    <h1>Recetas</h1>
+    <div class="busqueda-container">
+        <label for="tipo-receta">Filtrar por tipo:</label>
+        <select id="tipo-receta">
+            <option value="">Seleccionar tipo</option>
+            <option value="sencilla">Sencilla</option>
+            <option value="elaborada">Elaborada</option>
+            <option value="saludable">Saludable</option>
+        </select>
+
+        <label for="ingrediente">Buscar por ingrediente:</label>
+        <input type="text" id="ingrediente" placeholder="Ingresa un ingrediente" />
+
+        <button id="buscar-btn">Buscar</button>
+    </div>
+    <div id="recetas-container">
+
+    </div>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Función para obtener las recetas
+        async function fetchRecetas(tipo = '', ingrediente = '') {
+            try {
+                let url = "/listarecetas/"
+                if (tipo) {
+                    if (tipo === 'saludable') {
+                        url = "/recetas/saludables";  // Ruta para recetas saludables
+                    } else {
+                        url = `/recetas/${tipo}/`;
+                    }
+                }
+                else if (ingrediente) {
+                    url = `/recetas/por_ingrediente/?ingrediente=${ingrediente}`
+                }
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error("Error al cargar las recetas.");
+                }
+                const recetaNombres = await response.json();
+                let recetasCompletas = [];
+                if (tipo || ingrediente) {
+                    recetasCompletas = await Promise.all(
+                        recetaNombres.map(async (nombre) => {
+                            const recetaResponse = await fetch(`/recetas/detalle/${encodeURIComponent(nombre.trim())}`); // Llamada para obtener los detalles
+                            if (!recetaResponse.ok) {
+                                console.error(`Error al obtener los detalles de la receta: ${nombre}`);
+                                return null; // Evitar que el error interrumpa el resto
+                            }
+                            return await recetaResponse.json();
+                        })
+                    );
+                    recetasCompletas = recetasCompletas.filter(receta => receta !== null);
+                } else {
+                    recetasCompletas = recetaNombres;
+                }
+                displayRecetas(recetasCompletas);
+            } catch (error) {
+                console.error("Error al obtener las recetas:", error);
+                document.getElementById("recetas-container").innerHTML = "Hubo un error al cargar las recetas.";
+            }
+        }
+
+        // Función para mostrar las recetas en la página
+        function displayRecetas(recetas) {
+            const recetasContainer = document.getElementById("recetas-container");
+            recetasContainer.innerHTML = ""; // Limpiar el mensaje de carga
+
+            // Si no hay recetas, mostrar mensaje adecuado
+            if (recetas.length === 0) {
+                recetasContainer.innerHTML = "<p>No hay recetas disponibles.</p>";
+                return;
+            }
+
+            // Crear el HTML para cada receta
+            recetas.forEach((receta) => {
+                const recetaDiv = document.createElement("div");
+                recetaDiv.classList.add("receta");
+
+                // Crear el contenido de la receta
+                recetaDiv.innerHTML = `
+                    <a href="/editar-eliminar-receta/${ receta.id }" class="receta-link">
+                        <h2>${ receta.nombre }</h2>
+                    </a>
+                    <p><strong>Usuario:</strong> ${receta.usuario.nombre}</p>
+                    <p><strong>Tiempo de preparación:</strong> ${receta.tiempo_preparacion} minutos</p>
+                    <p><strong>Ingredientes:</strong></p>
+                    <ul>
+                        ${receta.ingredientes.map(ingrediente => `<li>${ingrediente.nombre}</li>`).join('')}
+                    </ul>
+                `;
+                // Agregar la receta al contenedor
+                recetasContainer.appendChild(recetaDiv);
+            });
+        }
+
+        document.getElementById("buscar-btn").addEventListener("click", () => {
+            const tipo = document.getElementById("tipo-receta").value;
+            const ingrediente = document.getElementById("ingrediente").value;
+
+            fetchRecetas(tipo, ingrediente);
+        });
+        fetchRecetas();
+    });
+</script>
+{% endblock %}
